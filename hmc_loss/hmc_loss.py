@@ -5,17 +5,14 @@
 import numpy as np
 from queue import Queue
 
-def hmc_loss(true_matrix, pred_matrix, graph, root, label_list, alpha=1, beta=1):
+def hmc_loss(true_matrix, pred_matrix, graph, root, label_list, cost_list, alpha=1, beta=1):
     validate_root(graph, root)
-    cost_graph = get_cost_graph(graph, root)
-    loss = get_loss(true_matrix, pred_matrix, cost_graph, label_list, alpha, beta)
+    validate_list(graph, label_list, cost_list)
+    loss = get_loss(true_matrix, pred_matrix, graph, label_list, cost_list, alpha, beta)
     return loss
 
-def get_loss(true_matrix, pred_matrix, cost_graph, label_list, alpha, beta):
-    cost_list = [cost_graph[node]["cost"] for node in label_list]
-    cost_list = np.array(cost_list)
-
-    c_matrix = remove_matrix_redunduncy(true_matrix-pred_matrix, label_list, cost_graph)
+def get_loss(true_matrix, pred_matrix, graph, label_list, cost_list, alpha, beta):
+    c_matrix = remove_matrix_redunduncy(true_matrix-pred_matrix, label_list, graph)
 
     fn_ci = np.where(c_matrix==1, cost_list, 0)
     fp_ci = np.where(c_matrix==-1, cost_list, 0)
@@ -47,8 +44,7 @@ def get_parent_index_list(graph, label_list):
     for label in label_list:
         tmp = []
         for parent in graph.successors(label):
-            if parent != "cost":
-                tmp.append(label_list.index(parent))
+            tmp.append(label_list.index(parent))
         tmp = sorted(tmp)
         parent_index.append(tmp)
     return parent_index
@@ -59,41 +55,52 @@ def validate_root(graph, root):
             "This function requires bottom-up direction.")
     return 0
 
-def get_node_cost(graph, node):
+def validate_list(graph, label_list, cost_list):
+    if len(graph.nodes()) != len(label_list) :
+        raise ValueError("Number of nodes in graph doesn't match length of label_list")
+    if len(graph.nodes()) != len(cost_list):
+        raise ValueError("Number of nodes in graph doesn't match length of cost_list")
+    return 0
+
+def get_node_cost(graph, node, cost_dict):
     """
         get cost of input node along
-        To adapt for DAG, if parent node doesn't have cost attribution, return 0.
-        This node calculate again in the loop.
+        If parent node cost is not calculated, return 0.
+        This node calculate again in the loop by DAG structure.
     """
     cost = 0
     ancestors = graph.successors(node)
     if len(ancestors) == 0:
         return 1
     for ancestor in ancestors:
-        if ancestor != "cost":
-            try:
-                cost += graph[ancestor]["cost"]/len(graph.predecessors(ancestor))
-            except KeyError:
-                return 0
+        try:
+            cost += cost_dict[ancestor]/len(graph.predecessors(ancestor))
+        except KeyError:
+            return 0
     return cost
 
-def get_cost_graph(graph, root):
+def get_cost_dict(graph, root):
     """
-        add cost to input graph by breath first search
+        Return dictionary that has cost of each node in the graph
     """
-    cost_graph = graph.copy()
+    cost_dict = {}
     q = Queue()
-    cost_graph[root]["cost"] = get_node_cost(cost_graph, root)
-    for predecessor in cost_graph.predecessors(root):
+    cost_dict[root] = get_node_cost(graph, root, cost_dict)
+    for predecessor in graph.predecessors(root):
         q.put(predecessor)
     while q.empty() == False:
         child = q.get()
-        cost_graph[child]["cost"] = get_node_cost(cost_graph, child)
-
-        child_predecessors = cost_graph.predecessors(child)
+        cost_dict[child] = get_node_cost(graph, child, cost_dict)
+        child_predecessors = graph.predecessors(child)
         for predecessor in child_predecessors:
             q.put(predecessor)
-    return cost_graph
+    return cost_dict
+
+def get_cost_list(graph, root, label_list):
+    cost_dict = get_cost_dict(graph, root)
+    cost_list = [cost_dict[node] for node in label_list]
+    cost_list = np.array(cost_list)
+    return cost_list
 
 def main():
     pass
