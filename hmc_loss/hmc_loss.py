@@ -3,23 +3,37 @@
 #Author: Shinya Suzuki
 #Created: 2016-06-21
 import numpy as np
+from functools import reduce
 from queue import Queue
 
-def hmc_loss(true_matrix, pred_matrix, graph, root, label_list, cost_list, alpha=1, beta=1):
-    validate_root(graph, root)
+def hmc_loss(true_matrix, pred_matrix, graph, root, label_list, cost_list, alpha=None, beta=None, average="micro"):
     label_list = list(label_list)
     cost_list = np.array(cost_list)
+    validate_root(graph, root)
+    validate_coefficient(alpha, beta)
+    validate_average(average)
     validate_list(graph, label_list, cost_list)
-    loss = get_loss(true_matrix, pred_matrix, graph, label_list, cost_list, alpha, beta)
+    loss = get_loss(true_matrix, pred_matrix, graph, label_list, cost_list, alpha, beta, average)
     return loss
 
-def get_loss(true_matrix, pred_matrix, graph, label_list, cost_list, alpha, beta):
+def get_loss(true_matrix, pred_matrix, graph, label_list, cost_list, alpha, beta, average):
     c_matrix = remove_matrix_redunduncy(true_matrix-pred_matrix, label_list, graph)
 
-    fn_ci = np.where(c_matrix==1, cost_list, 0)
-    fp_ci = np.where(c_matrix==-1, cost_list, 0)
-    loss_list = alpha * np.sum(fn_ci, axis=1) + beta * np.sum(fp_ci, axis=1)
-    loss = np.mean(loss_list)
+    if average == "macro":
+        if alpha is None or beta is None:
+            gamma = get_gamma(true_matrix, average)
+            alpha, beta = get_alpha_beta(gamma)
+        fn_ci = np.where(c_matrix==1, np.c_[alpha]*cost_list, 0)
+        fp_ci = np.where(c_matrix==-1, np.c_[beta]*cost_list, 0)
+        loss_list = np.sum(fn_ci+fp_ci, axis=1)
+        loss = np.mean(loss_list)
+    elif average == "micro":
+        if alpha is None or beta is None:
+            gamma = get_gamma(true_matrix, average)
+            alpha, beta = get_alpha_beta(gamma)
+        fn_ci = np.mean(np.where(c_matrix==1, cost_list, 0), axis=0)
+        fp_ci = np.mean(np.where(c_matrix==-1, cost_list, 0), axis=0)
+        loss = alpha * np.sum(fn_ci) + beta * np.sum(fp_ci)
     return loss
 
 def remove_matrix_redunduncy(matrix, label_list, graph):
@@ -36,6 +50,23 @@ def remove_matrix_redunduncy(matrix, label_list, graph):
             v = np.where(np.any(matrix[:, p], axis=1)==False, matrix[:,i], 0)
         m[:, i] = v
     return m
+
+def get_gamma(true_matrix, average):
+    if average == "macro":
+        n_one = np.sum(true_matrix, axis=1)
+        n_zero = true_matrix.shape[1] - n_one
+        gamma = n_zero / n_one
+    elif average == "micro":
+        n_one = np.count_nonzero(true_matrix)
+        n_zero = reduce(lambda x,y:x*y, true_matrix.shape) - n_one
+        gamma = n_zero / n_one
+    return gamma
+
+def get_alpha_beta(gamma):
+    beta = 2 / (1 + gamma)
+    alpha = 2 - beta
+    print(alpha, beta)
+    return (alpha, beta)
 
 def get_parent_index_list(graph, label_list):
     """
@@ -62,6 +93,19 @@ def validate_list(graph, label_list, cost_list):
         raise ValueError("Number of nodes in graph doesn't match length of label_list")
     if len(graph.nodes()) != len(cost_list):
         raise ValueError("Number of nodes in graph doesn't match length of cost_list")
+    return 0
+
+def validate_coefficient(alpha, beta):
+    if (alpha is None and beta is not None):
+        raise ValueError("Beta is None in spite of alpha is used")
+    elif (alpha is not None and beta is None):
+        raise ValueError("Alpha is None in spite of beta is used")
+    return 0
+
+def validate_average(average):
+    valid_average = ["micro", "macro"]
+    if average not in valid_average:
+        raise ValueError("Invalid input of average:{0}".format(average))
     return 0
 
 def get_node_cost(graph, node, cost_dict):
