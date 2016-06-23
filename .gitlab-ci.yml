@@ -5,7 +5,7 @@ test_job:
     tags:
         - docker
         - python
-    image: python3/science 
+    image: python3/science
     type: test
     script:
         - python ./hmc_loss/test.py
