@@ -37,7 +37,7 @@ hmc_loss(true_label, pred_label, graph, 0, label_list, cost_list, alpha=0.5, bet
 ```
 
 ## Licence
-[MIT](https://github.com/tcnksm/tool/blob/master/LICENCE)
+[MIT](http://choosealicense.com/licenses/mit/)
 
 ## Author
 [Taske HAMANO](https://github.com/TaskeHAMANO)
