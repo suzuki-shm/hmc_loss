@@ -17,7 +17,7 @@ else:
 setup(
         name = "hmc_loss",
         packages = find_packages(),
-        version = "0.0.1",
+        version = "0.1.0",
         discription = "Validation metrics for hierarchical multi-label classification",
         long_description = long_description,
         author = "Shinya SUZUKI",
