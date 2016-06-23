@@ -7,6 +7,8 @@ from queue import Queue
 
 def hmc_loss(true_matrix, pred_matrix, graph, root, label_list, cost_list, alpha=1, beta=1):
     validate_root(graph, root)
+    label_list = list(label_list)
+    cost_list = np.array(cost_list)
     validate_list(graph, label_list, cost_list)
     loss = get_loss(true_matrix, pred_matrix, graph, label_list, cost_list, alpha, beta)
     return loss
@@ -99,7 +101,6 @@ def get_cost_dict(graph, root):
 def get_cost_list(graph, root, label_list):
     cost_dict = get_cost_dict(graph, root)
     cost_list = [cost_dict[node] for node in label_list]
-    cost_list = np.array(cost_list)
     return cost_list
 
 def main():
