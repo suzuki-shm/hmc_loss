@@ -5,6 +5,11 @@ HMC-loss
 Python-implemented hierarchical multi-class validation metrics: HMC-loss
 Original paper is (Bi&Kwok, 2012)
 
+## Install
+```
+pip install hmc_loss
+```
+
 ## Requirement
 * numpy
 * Network X
