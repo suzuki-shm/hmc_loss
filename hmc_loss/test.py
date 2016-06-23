@@ -6,6 +6,7 @@
 import unittest
 import numpy as np
 import networkx as nx
+import time
 from itertools import product
 from hmc_loss import *
 
@@ -26,6 +27,35 @@ class TestHmcLoss(unittest.TestCase):
                            list(product(h6,["I"]))+
                            list(product(h6,["D"])))
         self.label_list = h1+h2+h3+h4+h5+h6
+        self.cost_dict = {'A':1, 'B':1/4, 'C':1/4, 'D':1/4, 'E':1/4, 'F':1/8, 'G':1/8, 'H':1/4, 'I':1/12, 'K':1/12, 'J':1/12, 'L':(1/12)+(1/4)}
+        self.cost_list  = [1, 1/4, 1/4, 1/4, 1/4, 1/8, 1/8, 1/4, 1/12, 1/12, 1/12, (1/12)+(1/4)]
+
+    def test_hmc_loss_speed(self):
+        print("\nCalculation time test begins")
+        data_sizes = [25, 50, 100]
+        node_sizes = [25, 50, 100]
+        for data_size in data_sizes:
+            for node_size in node_sizes:
+                true_label = np.random.randint(2, size=(data_size,node_size))
+                pred_label = np.random.randint(2, size=(data_size,node_size))
+                graph = nx.gnc_graph(node_size)
+                label_list = list(range(node_size))
+                start_time = time.time()
+                cost_list = get_cost_list(graph, 0, label_list)
+                cost_list_time = time.time()
+                hmc_loss(true_label,
+                        pred_label,
+                        graph,
+                        0,
+                        label_list,
+                        cost_list
+                        )
+                end_time = time.time()
+                whole_calc_time = end_time - start_time
+                cost_calc_time = cost_list_time - start_time
+                hmc_calc_time = end_time - cost_list_time
+                print("Whole calc. time:{0}, Cost list calc. time:{1}, HMC-loss calc. time:{2}, data size:{3}, node size:{4}".format(whole_calc_time, cost_calc_time, hmc_calc_time, data_size, node_size))
+        return 0
 
     def test_hmc_loss(self):
         y1 = np.array([[1,0,1,0,0,1,0,0,0,0,0,0]])
@@ -33,27 +63,27 @@ class TestHmcLoss(unittest.TestCase):
 
         #Check symmetric
         self.assertEqual(
-                hmc_loss(y1, y2, self.graph, "A", self.label_list),
+                hmc_loss(y1, y2, self.graph, "A", self.label_list, self.cost_list),
                 1/4)
         self.assertEqual(
-                hmc_loss(y2, y1, self.graph, "A", self.label_list),
+                hmc_loss(y2, y1, self.graph, "A", self.label_list, self.cost_list),
                 1/4)
 
         # Check alpha variable
         self.assertEqual(
-                hmc_loss(y1, y2, self.graph, "A", self.label_list, alpha=2),
+                hmc_loss(y1, y2, self.graph, "A", self.label_list, self.cost_list, alpha=2),
                 (1/4) + (1/8))
 
         # Check beta variable
         self.assertEqual(
-                hmc_loss(y1, y2, self.graph, "A", self.label_list, beta=3),
+                hmc_loss(y1, y2, self.graph, "A", self.label_list, self.cost_list, beta=3),
                 (1/8) + (3/8))
 
         # Check dag
         y1 = np.array([[1,0,0,0,1,0,0,0,1,0,0,1]])
         y2 = np.array([[1,0,0,1,0,0,0,0,0,0,0,0]])
         self.assertEqual(
-                hmc_loss(y1, y2, self.graph, "A", self.label_list),
+                hmc_loss(y1, y2, self.graph, "A", self.label_list, self.cost_list),
                 (1/4)+(1/4))
 
         # Check multi input
@@ -66,7 +96,7 @@ class TestHmcLoss(unittest.TestCase):
             [1,1,0,0,0,0,0,1,0,0,0,0],
             [1,0,0,0,0,0,0,0,0,0,0,0]])
         self.assertEqual(
-                hmc_loss(y1, y2, self.graph, "A", self.label_list),
+                hmc_loss(y1, y2, self.graph, "A", self.label_list, self.cost_list),
                 (((1/12)+(1/12))+(0)+(1/4))/len(y1))
         return 0
 
@@ -118,13 +148,13 @@ class TestHmcLoss(unittest.TestCase):
         return 0
 
     def test_get_node_cost(self):
-        self.assertEqual(get_node_cost(self.graph, "A"), 1)
+        for node in self.label_list:
+            self.assertEqual(get_node_cost(self.graph, node, self.cost_dict), self.cost_dict[node])
         return 0
 
-    def test_get_cost_graph(self):
-        self.assertEqual(get_cost_graph(self.graph, "A")["A"]["cost"], 1)
-        self.assertEqual(get_cost_graph(self.graph, "A")["B"]["cost"], 1/4)
-        self.assertEqual(get_cost_graph(self.graph, "A")["L"]["cost"], (1/12)+(1/4))
+    def test_get_cost_dict(self):
+        for node in self.label_list:
+            self.assertEqual(get_cost_dict(self.graph, "A")[node], self.cost_dict[node])
         return 0
 
 if __name__ =='__main__':
