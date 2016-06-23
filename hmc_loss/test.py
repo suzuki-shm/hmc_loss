@@ -63,27 +63,26 @@ class TestHmcLoss(unittest.TestCase):
 
         #Check symmetric
         self.assertEqual(
-                hmc_loss(y1, y2, self.graph, "A", self.label_list, self.cost_list),
+                hmc_loss(y1, y2, self.graph, "A", self.label_list, self.cost_list, alpha=1, beta=1, average="macro"),
                 1/4)
         self.assertEqual(
-                hmc_loss(y2, y1, self.graph, "A", self.label_list, self.cost_list),
+                hmc_loss(y2, y1, self.graph, "A", self.label_list, self.cost_list, alpha=1, beta=1, average="macro"),
                 1/4)
 
         # Check alpha variable
         self.assertEqual(
-                hmc_loss(y1, y2, self.graph, "A", self.label_list, self.cost_list, alpha=2),
+                hmc_loss(y1, y2, self.graph, "A", self.label_list, self.cost_list, alpha=2, beta=1, average="macro"),
                 (1/4) + (1/8))
-
         # Check beta variable
         self.assertEqual(
-                hmc_loss(y1, y2, self.graph, "A", self.label_list, self.cost_list, beta=3),
+                hmc_loss(y1, y2, self.graph, "A", self.label_list, self.cost_list, alpha=1, beta=3, average="macro"),
                 (1/8) + (3/8))
 
         # Check dag
         y1 = np.array([[1,0,0,0,1,0,0,0,1,0,0,1]])
         y2 = np.array([[1,0,0,1,0,0,0,0,0,0,0,0]])
         self.assertEqual(
-                hmc_loss(y1, y2, self.graph, "A", self.label_list, self.cost_list),
+                hmc_loss(y1, y2, self.graph, "A", self.label_list, self.cost_list, alpha=1, beta=1, average="macro"),
                 (1/4)+(1/4))
 
         # Check multi input
@@ -96,8 +95,24 @@ class TestHmcLoss(unittest.TestCase):
             [1,1,0,0,0,0,0,1,0,0,0,0],
             [1,0,0,0,0,0,0,0,0,0,0,0]])
         self.assertEqual(
-                hmc_loss(y1, y2, self.graph, "A", self.label_list, self.cost_list),
+                hmc_loss(y1, y2, self.graph, "A", self.label_list, self.cost_list, alpha=1, beta=1, average="macro"),
                 (((1/12)+(1/12))+(0)+(1/4))/len(y1))
+
+        # Check gamma drived value(macro)
+        gamma = np.array([10/2, 9/3, 10/2])
+        beta = 2 / (1+gamma)
+        alpha = 2 - beta
+        self.assertEqual(
+                hmc_loss(y1, y2, self.graph, "A", self.label_list, self.cost_list, average="macro"),
+                ((beta[0]*(1/12)+beta[0]*(1/12))+(0)+alpha[2]*(1/4))/len(y1))
+
+        # Check gamma drived value(micro)
+        gamma = 29 / 7
+        beta =  2 / (1+gamma)
+        alpha = 2 - beta
+        self.assertEqual(
+                hmc_loss(y1, y2, self.graph, "A", self.label_list, self.cost_list, average="micro"),
+                alpha * np.sum(np.array([1/12])) + beta * np.sum([1/36, 1/36]))
         return 0
 
     def test_remove_matrix_redunduncy(self):
@@ -126,7 +141,9 @@ class TestHmcLoss(unittest.TestCase):
         return 0
 
     def test_validate_root(self):
+        # Check right direction graph
         self.assertEqual(validate_root(self.graph, "A"), 0)
+        # Check wrong direction graph
         graph = nx.DiGraph()
         h1 = ["A"]
         h2 = ["B", "C", "D", "E"]
@@ -156,6 +173,21 @@ class TestHmcLoss(unittest.TestCase):
         for node in self.label_list:
             self.assertEqual(get_cost_dict(self.graph, "A")[node], self.cost_dict[node])
         return 0
+
+    def test_get_gamma(self):
+        y1 = np.array([
+            [1,0,0,0,1,0,0,0,0,0,0,0],
+            [1,1,0,0,0,0,0,1,0,0,0,0],
+            [1,0,0,1,0,0,0,0,0,0,0,0]])
+        self.assertEqual(np.array_equal(get_gamma(y1, "macro"), np.array([5,3,5])), True)
+        self.assertEqual(get_gamma(y1, "micro"), 29/7)
+
+    def test_get_alpha_beta(self):
+        gamma = np.array([5,3,5])
+        self.assertEqual(np.array_equal(get_alpha_beta(gamma)[0], np.array([5/3, 3/2, 5/3])), True)
+        self.assertEqual(np.array_equal(get_alpha_beta(gamma)[1], np.array([1/3, 1/2, 1/3])), True)
+        gamma = 29/7
+        self.assertEqual(get_alpha_beta(gamma), (2 - (2/(1+29/7)), 2/(1+29/7)))
 
 if __name__ =='__main__':
     unittest.main()
