@@ -65,7 +65,6 @@ def get_gamma(true_matrix, average):
 def get_alpha_beta(gamma):
     beta = 2 / (1 + gamma)
     alpha = 2 - beta
-    print(alpha, beta)
     return (alpha, beta)
 
 def get_parent_index_list(graph, label_list):
