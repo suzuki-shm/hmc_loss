@@ -17,7 +17,7 @@ else:
 setup(
         name = "hmc_loss",
         packages = find_packages(),
-        version = "0.3.0",
+        version = "0.3.1",
         url = "https://github.com/TaskeHAMANO/hmc_loss",
         discription = "Validation metrics for hierarchical multi-label classification",
         long_description = long_description,
