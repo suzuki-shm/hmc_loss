@@ -12,7 +12,7 @@ def hmc_loss(true_matrix, pred_matrix, graph, root, label_list, cost_list, alpha
     validate_root(graph, root)
     validate_coefficient(alpha, beta)
     validate_average(average)
-    validate_list(graph, label_list, cost_list)
+    validate_list(label_list, cost_list)
     loss = get_loss(true_matrix, pred_matrix, graph, label_list, cost_list, alpha, beta, average)
     return loss
 
@@ -88,11 +88,9 @@ def validate_root(graph, root):
             "This function requires bottom-up direction.")
     return 0
 
-def validate_list(graph, label_list, cost_list):
-    if len(graph.nodes()) != len(label_list) :
-        raise ValueError("Number of nodes in graph doesn't match length of label_list")
-    if len(graph.nodes()) != len(cost_list):
-        raise ValueError("Number of nodes in graph doesn't match length of cost_list")
+def validate_list(label_list, cost_list):
+    if len(label_list) != len(cost_list):
+        raise ValueError("label_list length doesn't match length of cost_list")
     return 0
 
 def validate_coefficient(alpha, beta):
