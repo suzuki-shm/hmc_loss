@@ -113,6 +113,25 @@ class TestHmcLoss(unittest.TestCase):
         self.assertEqual(
                 hmc_loss(y1, y2, self.graph, "A", self.label_list, self.cost_list, average="micro"),
                 alpha * np.sum(np.array([1/12])) + beta * np.sum([1/36, 1/36]))
+
+        # Check incomplete matrix
+        y1 = np.array([
+            [1,0,0,0,1,0],
+            [1,0,0,0,0,0],
+            [1,0,0,0,1,1]])
+        y2 = np.array([
+            [1,0,0,0,0,0],
+            [1,0,0,0,1,0],
+            [1,0,0,0,1,0]])
+        label_list = ["A", "B", "C", "D", "E", "F"]
+        cost_list  = [1, 1/4, 1/4, 1/4, 1/4, 1/8]
+        gamma = (18 - 6) / 6
+        beta = 2/ (1+gamma)
+        alpha = 2 - beta
+        self.assertEqual(
+                hmc_loss(y1, y2, self.graph, "A", label_list, cost_list, average="micro"),
+                alpha * np.sum(np.array([1/4/3, 1/8/3])) + beta * np.sum([1/4/3])
+                )
         return 0
 
     def test_remove_matrix_redunduncy(self):
