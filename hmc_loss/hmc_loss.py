@@ -3,6 +3,7 @@
 #Author: Shinya Suzuki
 #Created: 2016-06-21
 import numpy as np
+import networkx as nx
 from functools import reduce
 from queue import Queue
 
@@ -17,11 +18,13 @@ def hmc_loss(true_matrix, pred_matrix, graph, root, label_list, cost_list, alpha
     return loss
 
 def get_loss(true_matrix, pred_matrix, graph, label_list, cost_list, alpha, beta, average):
-    c_matrix = remove_matrix_redunduncy(true_matrix-pred_matrix, label_list, graph)
+    true_matrix_filled = fill_parent_node(true_matrix, label_list, graph)
+    pred_matrix_filled = fill_parent_node(pred_matrix, label_list, graph)
+    c_matrix = remove_matrix_redunduncy(true_matrix_filled-pred_matrix_filled, label_list, graph)
 
     if average == "macro":
         if alpha is None or beta is None:
-            gamma = get_gamma(true_matrix, average)
+            gamma = get_gamma(true_matrix_filled, average)
             alpha, beta = get_alpha_beta(gamma)
         fn_ci = np.where(c_matrix==1, np.c_[alpha]*cost_list, 0)
         fp_ci = np.where(c_matrix==-1, np.c_[beta]*cost_list, 0)
@@ -29,12 +32,32 @@ def get_loss(true_matrix, pred_matrix, graph, label_list, cost_list, alpha, beta
         loss = np.mean(loss_list)
     elif average == "micro":
         if alpha is None or beta is None:
-            gamma = get_gamma(true_matrix, average)
+            gamma = get_gamma(true_matrix_filled, average)
             alpha, beta = get_alpha_beta(gamma)
         fn_ci = np.mean(np.where(c_matrix==1, cost_list, 0), axis=0)
         fp_ci = np.mean(np.where(c_matrix==-1, cost_list, 0), axis=0)
         loss = alpha * np.sum(fn_ci) + beta * np.sum(fp_ci)
     return loss
+
+def fill_parent_node(input_matrix, label_list, graph):
+    """
+        If child node will be penalized, the parent node's will be penalized
+    """
+    child_index = get_child_index_list(graph, label_list)
+
+    m = np.empty(input_matrix.shape, dtype=int)
+    for j in range(nx.dag_longest_path_length(graph)):
+        if j == 0:
+            matrix = input_matrix
+        else:
+            matrix = m
+        for i, c in enumerate(child_index):
+            if c == []:
+                v = matrix[:, i]
+            else:
+                v = np.where(np.any(matrix[:, c], axis=1)==1, 1, matrix[:,i])
+            m[:, i] = v
+    return m
 
 def remove_matrix_redunduncy(matrix, label_list, graph):
     """
@@ -47,7 +70,7 @@ def remove_matrix_redunduncy(matrix, label_list, graph):
         if p == []:
             v = matrix[:, i]
         else:
-            v = np.where(np.any(matrix[:, p], axis=1)==False, matrix[:,i], 0)
+            v = np.where(np.any(matrix[:, p], axis=1)==1, 0, matrix[:,i])
         m[:, i] = v
     return m
 
@@ -65,7 +88,6 @@ def get_gamma(true_matrix, average):
 def get_alpha_beta(gamma):
     beta = 2 / (1 + gamma)
     alpha = 2 - beta
-    print(alpha, beta)
     return (alpha, beta)
 
 def get_parent_index_list(graph, label_list):
@@ -81,6 +103,19 @@ def get_parent_index_list(graph, label_list):
         tmp = sorted(tmp)
         parent_index.append(tmp)
     return parent_index
+
+def get_child_index_list(graph, label_list):
+    child_index = []
+    for label in label_list:
+        tmp = []
+        for child in graph.predecessors(label):
+            try:
+                tmp.append(label_list.index(child))
+            except ValueError:
+                pass
+        tmp = sorted(tmp)
+        child_index.append(tmp)
+    return child_index
 
 def validate_root(graph, root):
     if len(graph.successors(root)) !=0:
