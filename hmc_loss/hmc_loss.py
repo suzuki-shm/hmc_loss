@@ -51,6 +51,7 @@ def fill_parent_node(input_matrix, label_list, graph):
             matrix = input_matrix
         else:
             matrix = m
+
         for i, c in enumerate(child_index):
             if c == []:
                 v = matrix[:, i]
@@ -93,18 +94,19 @@ def get_alpha_beta(gamma):
 def get_parent_index_list(graph, label_list):
     """
         Return parent index in label_list.
-        To get adaptation for more than one parent, result list is nested.
+        To strugle with node that has more than one parent, result list is nested.
     """
     parent_index = []
     for label in label_list:
-        tmp = []
-        for parent in graph.successors(label):
-            tmp.append(label_list.index(parent))
-        tmp = sorted(tmp)
+        tmp = [label_list.index(parent) for parent in graph.successors(label)]
         parent_index.append(tmp)
     return parent_index
 
 def get_child_index_list(graph, label_list):
+    """
+        Return child node index in label_list.
+
+    """
     child_index = []
     for label in label_list:
         tmp = []
@@ -113,7 +115,6 @@ def get_child_index_list(graph, label_list):
                 tmp.append(label_list.index(child))
             except ValueError:
                 pass
-        tmp = sorted(tmp)
         child_index.append(tmp)
     return child_index
 
