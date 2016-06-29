@@ -33,8 +33,8 @@ class TestHmcLoss(unittest.TestCase):
 
     def test_hmc_loss_speed(self):
         print("\nCalculation time test begins")
-        data_sizes = [25, 50, 100, 200, 400, 800]
-        node_sizes = [50, 200, 800]
+        data_sizes = [25, 100, 400]
+        node_sizes = [50, 200, 400]
         for data_size in data_sizes:
             for node_size in node_sizes:
                 true_label = np.random.randint(2, size=(data_size,node_size))
@@ -185,11 +185,6 @@ class TestHmcLoss(unittest.TestCase):
         self.assertEqual(
                 np.array_equal(remove_matrix_redunduncy(matrix, label_list, graph), removed),
                 True)
-        return 0
-
-    def test_get_parent_index_list(self):
-        self.assertEqual(get_parent_index_list(self.graph, self.label_list),
-                [[],[0],[0],[0],[0],[2],[2],[1],[4],[4],[4],[3,8]])
         return 0
 
     def test_validate_root(self):
