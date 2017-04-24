@@ -7,7 +7,7 @@ import networkx as nx
 from functools import reduce
 from queue import Queue
 
-def hmc_loss(true_matrix, pred_matrix, graph, root, label_list, cost_list, alpha=None, beta=None, average="micro"):
+def hmc_loss_score(true_matrix, pred_matrix, graph, root, label_list, cost_list, alpha=None, beta=None, average="micro"):
     label_list = list(label_list)
     cost_list = np.array(cost_list)
     validate_root(graph, root)
