@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/TaskeHAMANO/hmc_loss.svg?branch=master)](https://travis-ci.org/TaskeHAMANO/hmc_loss)
+
 HMC-loss
 ====
 
