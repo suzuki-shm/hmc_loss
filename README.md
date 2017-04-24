@@ -20,7 +20,7 @@ pip install hmc_loss
 This metrics is implemented like scikit-learn metrics.
 
 ```
-from hmc_loss import hmc_loss, get_cost_list
+from hmc_loss import hmc_loss_score, get_cost_list
 import numpy as np
 
 # Generate label data(2-D array of numpy)
@@ -34,7 +34,7 @@ label_list = list(range(100))
 # Calculate cost of each node in graph
 cost_list = get_cost_list(graph, 0, label_list)
 # Calculate HMC-loss
-hmc_loss(true_label, pred_label, graph, 0, label_list, cost_list, alpha=0.5, beta=1.5)
+hmc_loss_score(true_label, pred_label, graph, 0, label_list, cost_list, alpha=0.5, beta=1.5)
 
 ```
 
