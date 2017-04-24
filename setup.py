@@ -31,5 +31,5 @@ setup(
             "Topic :: Scientific/Engineering :: Information Analysis"
             ],
         license="MIT",
-        install_requires = ["networkx", "numpy", "nose", "setuptools"]
+        install_requires = ["networkx", "numpy", "nose", "setuptools", "coverage"]
 )
