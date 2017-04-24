@@ -2,8 +2,8 @@ HMC-loss
 ====
 
 ## Abstruct
-Python-implemented hierarchical multi-class validation metrics: HMC-loss
-Original paper is (Bi&Kwok, 2012)
+Python-implemented hierarchical multi-class validation metrics: HMC-loss .
+Original paper is [(Bi&Kwok, 2012)](http://ieeexplore.ieee.org/abstract/document/6413911/) .
 
 ## Install
 ```
